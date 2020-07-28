@@ -11,5 +11,7 @@ namespace ReceptApp.Models
         {
             base.OnModelCreating(builder);
         }
+
+        public DbSet<User> UserList { get; set; }
     }
 }
