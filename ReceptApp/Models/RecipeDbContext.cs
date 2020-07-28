@@ -13,5 +13,6 @@ namespace ReceptApp.Models
         }
 
         public DbSet<User> UserList { get; set; }
+        public DbSet<Ingredient> Ingredients { get; set; }
     }
 }
