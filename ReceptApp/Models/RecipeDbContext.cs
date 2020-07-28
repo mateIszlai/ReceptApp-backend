@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ReceptApp.Models
 {
-    public class ReceptDbContext : IdentityDbContext<User>
+    public class RecipeDbContext : IdentityDbContext<User>
     {
-        public ReceptDbContext(DbContextOptions<ReceptDbContext> options) : base(options) { }
+        public RecipeDbContext(DbContextOptions<RecipeDbContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
