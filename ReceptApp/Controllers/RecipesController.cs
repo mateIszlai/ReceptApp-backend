@@ -1,8 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReceptApp.Models;
+using ReceptApp.Models.Requests;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace ReceptApp.Controllers
@@ -45,14 +48,25 @@ namespace ReceptApp.Controllers
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutRecipe(int id, Recipe recipe)
+        public async Task<IActionResult> PutRecipe(int id, RecipeToChange newRecipe)
         {
-            if (id != recipe.Id)
-            {
-                return BadRequest();
-            }
+            var recipe = await _context.Recipes.FirstOrDefaultAsync(r => r.Id == id);
 
-            _context.Entry(recipe).State = EntityState.Modified;
+            if (recipe == default(Recipe))
+                return NotFound();
+
+            if (recipe.OwnerId != User.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier).Value)
+                return BadRequest();
+
+            recipe.Name = newRecipe.Name;
+            recipe.Servings = newRecipe.Servings;
+            recipe.AdditionalTimeUnit = newRecipe.AdditionalTimeUnit;
+            recipe.AdditionalTimeAmount = newRecipe.AdditionalTimeAmount;
+            recipe.CookTimeAmount = newRecipe.CookTimeAmount;
+            recipe.CookTimeUnit = newRecipe.CookTimeUnit;
+            recipe.Description = newRecipe.Description;
+            recipe.PreparationTimeAmount = newRecipe.PreparationTimeAmount;
+            recipe.PreparationTimeUnit = newRecipe.PreparationTimeUnit;
 
             try
             {
@@ -60,14 +74,7 @@ namespace ReceptApp.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!RecipeExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
                     throw;
-                }
             }
 
             return NoContent();
@@ -79,6 +86,15 @@ namespace ReceptApp.Controllers
         [HttpPost]
         public async Task<ActionResult<Recipe>> PostRecipe(Recipe recipe)
         {
+            var formFile = Request.Form.Files[0];
+            var filename = Request.Form.FirstOrDefault(k => k.Key == "FileName").Value;
+            var ext = Path.GetExtension(filename).ToLowerInvariant();
+
+            if (string.IsNullOrEmpty(ext) || !permittedExtensions.Contains(ext))
+            {
+                return BadRequest("Invalid file extension");
+            }
+
             _context.Recipes.Add(recipe);
             await _context.SaveChangesAsync();
 
@@ -91,19 +107,15 @@ namespace ReceptApp.Controllers
         {
             var recipe = await _context.Recipes.FindAsync(id);
             if (recipe == null)
-            {
                 return NotFound();
-            }
+
+            if (recipe.OwnerId != User.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier).Value)
+                return BadRequest();
 
             _context.Recipes.Remove(recipe);
             await _context.SaveChangesAsync();
 
             return recipe;
-        }
-
-        private bool RecipeExists(int id)
-        {
-            return _context.Recipes.Any(e => e.Id == id);
         }
     }
 }
