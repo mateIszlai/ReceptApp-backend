@@ -21,5 +21,21 @@ namespace ReceptApp.Controllers
         {
             _userManager = userManager;
         }
+
+        [HttpPost]
+        public async Task<IActionResult> Register(RegisterRequestData userData)
+        {
+            var user = new User { UserName = userData.UserName, FirstName = userData.FirstName, LastName = userData.LastName, Email = userData.Email, NickName = userData.NickName };
+
+            var result = await _userManager.CreateAsync(user, userData.Password);
+
+            if (result.Succeeded)
+            {
+                await _userManager.AddClaimAsync(user, new Claim(ClaimTypes.Email, user.Email));
+                return CreatedAtAction("GetUser", new { id = user.Id }, user);
+            }
+
+            return StatusCode(406, string.Join("\n", result.Errors.Select(error => error.Description)));
+        }
     }
 }
