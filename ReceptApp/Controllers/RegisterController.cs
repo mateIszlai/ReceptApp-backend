@@ -29,7 +29,7 @@ namespace ReceptApp.Controllers
             if (result.Succeeded)
             {
                 await _userManager.AddClaimAsync(user, new Claim(ClaimTypes.Email, user.Email));
-                return CreatedAtAction("GetUser", new { id = user.Id }, user);
+                return StatusCode(201, "Registered successfully");
             }
 
             return StatusCode(406, string.Join("\n", result.Errors.Select(error => error.Description)));
