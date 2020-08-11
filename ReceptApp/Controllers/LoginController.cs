@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using ReceptApp.Models;
 using System.Threading.Tasks;
 
@@ -21,7 +22,13 @@ namespace ReceptApp.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(LoginRequestData loginData)
         {
-            var user = await _userManager.FindByNameAsync(loginData.UserName);
+            User user = null;
+            try
+            {
+                user = await _userManager.FindByNameAsync(loginData.UserName);
+            } catch (SqlException) {
+                return StatusCode(500, "Something went wrong");
+            }
 
             if(user == null)
             {
