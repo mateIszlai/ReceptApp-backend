@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using ReceptApp.Models;
 using ReceptApp.Models.Requests;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -17,7 +16,6 @@ namespace ReceptApp.Controllers
         private readonly RecipeDbContext _context;
         private readonly string[] permittedExtensions = { ".jpg", ".png", ".bmp" };
 
-
         public RecipesController(RecipeDbContext context)
         {
             _context = context;
@@ -25,14 +23,17 @@ namespace ReceptApp.Controllers
 
         // GET: api/Recipes
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Recipe>>> GetRecipes()
+        public async Task<ActionResult<IEnumerable<RecipeToSend>>> GetRecipes()
         {
-            return await _context.Recipes.ToListAsync();
+            var recipesToSend = new List<RecipeToSend>();
+            var recipes = await _context.Recipes.ToListAsync();
+            recipes.ForEach(r => recipesToSend.Add(new RecipeToSend(r)));
+            return recipesToSend;
         }
 
         // GET: api/Recipes/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Recipe>> GetRecipe(int id)
+        public async Task<ActionResult<RecipeToSend>> GetRecipe(int id)
         {
             var recipe = await _context.Recipes.FindAsync(id);
 
@@ -41,7 +42,9 @@ namespace ReceptApp.Controllers
                 return NotFound();
             }
 
-            return recipe;
+            var recipeToSend = new RecipeToSend(recipe);
+
+            return recipeToSend;
         }
 
         // PUT: api/Recipes/5
@@ -64,7 +67,7 @@ namespace ReceptApp.Controllers
             recipe.AdditionalTimeAmount = newRecipe.AdditionalTimeAmount;
             recipe.CookTimeAmount = newRecipe.CookTimeAmount;
             recipe.CookTimeUnit = newRecipe.CookTimeUnit;
-            recipe.Description = newRecipe.Description;
+            recipe.Description = string.Join('@', newRecipe.Description);
             recipe.PreparationTimeAmount = newRecipe.PreparationTimeAmount;
             recipe.PreparationTimeUnit = newRecipe.PreparationTimeUnit;
 
@@ -84,21 +87,22 @@ namespace ReceptApp.Controllers
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPost]
-        public async Task<ActionResult<Recipe>> PostRecipe(Recipe recipe)
+        public async Task<IActionResult> PostRecipe([FromBody]RecipePostRequest recipe)
         {
-            var formFile = Request.Form.Files[0];
-            var filename = Request.Form.FirstOrDefault(k => k.Key == "FileName").Value;
-            var ext = Path.GetExtension(filename).ToLowerInvariant();
+            var recipeToAdd = new Recipe(recipe, User.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier).Value);
 
-            if (string.IsNullOrEmpty(ext) || !permittedExtensions.Contains(ext))
+            _context.Recipes.Add(recipeToAdd);
+
+            try
             {
-                return BadRequest("Invalid file extension");
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException e)
+            {
+                return StatusCode(500, e.Data);
             }
 
-            _context.Recipes.Add(recipe);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetRecipe", new { id = recipe.Id }, recipe);
+            return Ok(recipeToAdd.Id);
         }
 
         // DELETE: api/Recipes/5
