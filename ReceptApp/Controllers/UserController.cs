@@ -18,11 +18,13 @@ namespace ReceptApp.Controllers
 
         private readonly RecipeDbContext _context;
         private readonly UserManager<User> _userManager;
+        private readonly SignInManager<User> _signInManager;
 
-        public UserController(RecipeDbContext context, UserManager<User> userManager)
+        public UserController(RecipeDbContext context, UserManager<User> userManager, SignInManager<User> signInManager)
         {
             _context = context;
             _userManager = userManager;
+            _signInManager = signInManager;
         }
 
         // PUT api/users/sanyi
@@ -62,10 +64,27 @@ namespace ReceptApp.Controllers
             return Ok();
         }
 
-        // DELETE api/<UserController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
+        // DELETE api/users/sanyi
+        [HttpDelete("{userName}")]
+        public async Task<IActionResult> Delete(string userName)
         {
+            var user = await _userManager.FindByNameAsync(userName);
+
+            if (user == null || user.Id != User.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier).Value)
+                return BadRequest();
+
+            await _signInManager.SignOutAsync();
+
+            try
+            {
+                await _userManager.DeleteAsync(user);
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500);
+            }
+
+            return Ok();
         }
     }
 }
