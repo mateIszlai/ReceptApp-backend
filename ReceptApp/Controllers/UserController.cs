@@ -27,19 +27,35 @@ namespace ReceptApp.Controllers
             _signInManager = signInManager;
         }
 
-        // PUT api/users/sanyi
-        [HttpPut("{userName}")]
-        public async  Task<IActionResult> Put(string userName, [FromBody] UserToModify toModify)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<UserToSend>> GetUser(string id)
         {
-            var user = await _userManager.FindByNameAsync(userName);
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+                return NotFound();
+
+            return new UserToSend(user);
+        }
+        // PUT api/users/id
+        [HttpPut("{id}")]
+        public async  Task<IActionResult> Put(string id, [FromBody] UserToModify toModify)
+        {
+            var user = await _userManager.FindByIdAsync(id);
 
             if (user == null || user.Id != User.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier).Value)
                 return BadRequest();
 
-            user.FirstName = toModify.FirstName;
-            user.LastName = toModify.LastName;
-            user.NickName = toModify.NickName;
-            user.Email = toModify.Email;
+            if (toModify.FirstName != string.Empty)
+                user.FirstName = toModify.FirstName;
+
+            if (toModify.LastName != string.Empty)
+                user.LastName = toModify.LastName;
+
+            if (toModify.NickName != string.Empty)
+                user.NickName = toModify.NickName;
+
+            if (toModify.Email != string.Empty)
+                user.Email = toModify.Email;
 
             try
             {
@@ -65,10 +81,10 @@ namespace ReceptApp.Controllers
         }
 
         // DELETE api/users/sanyi
-        [HttpDelete("{userName}")]
-        public async Task<IActionResult> Delete(string userName)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(string id)
         {
-            var user = await _userManager.FindByNameAsync(userName);
+            var user = await _userManager.FindByIdAsync(id);
 
             if (user == null || user.Id != User.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier).Value)
                 return BadRequest();
