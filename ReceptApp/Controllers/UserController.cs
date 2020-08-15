@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ReceptApp.Models;
 using ReceptApp.Models.Requests;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -25,10 +25,41 @@ namespace ReceptApp.Controllers
             _userManager = userManager;
         }
 
-        // PUT api/users/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] UserToModify toModify)
+        // PUT api/users/sanyi
+        [HttpPut("{userName}")]
+        public async  Task<IActionResult> Put(string userName, [FromBody] UserToModify toModify)
         {
+            var user = await _userManager.FindByNameAsync(userName);
+
+            if (user == null || user.Id != User.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier).Value)
+                return BadRequest();
+
+            user.FirstName = toModify.FirstName;
+            user.LastName = toModify.LastName;
+            user.NickName = toModify.NickName;
+            user.Email = toModify.Email;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            } catch(DbUpdateException)
+            {
+                return StatusCode(500);
+            }
+
+            if(toModify.NewPassword != string.Empty)
+            {
+                try
+                {
+                    await _userManager.ChangePasswordAsync(user, toModify.OldPassword, toModify.NewPassword);
+                }
+                catch (DbUpdateException)
+                {
+                    return StatusCode(500);
+                }
+            }
+
+            return Ok();
         }
 
         // DELETE api/<UserController>/5
