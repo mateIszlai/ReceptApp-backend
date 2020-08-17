@@ -36,7 +36,7 @@ namespace ReceptApp.Controllers
 
             return new UserToSend(user);
         }
-        // PUT api/users/id
+        // PUT api/users/4
         [HttpPut("{id}")]
         public async  Task<IActionResult> Put(string id, [FromBody] UserToModify toModify)
         {
@@ -80,7 +80,7 @@ namespace ReceptApp.Controllers
             return Ok();
         }
 
-        // DELETE api/users/sanyi
+        // DELETE api/users/4
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
