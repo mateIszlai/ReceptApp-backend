@@ -1,10 +1,8 @@
-﻿namespace ReceptApp.Models
+﻿namespace ReceptApp.Models.Requests
 {
-    public class Ingredient
+    public class IngredientToSend
     {
-        public int Id { get; set; }
         public string Name { get; set; }
-        public int RecipeId { get; set; }
         public double Amount { get; set; }
         public string Unit { get; set; }
     }

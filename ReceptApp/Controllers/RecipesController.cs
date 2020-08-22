@@ -23,11 +23,11 @@ namespace ReceptApp.Controllers
 
         // GET: api/Recipes
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<RecipeToSend>>> GetRecipes()
+        public async Task<ActionResult<IEnumerable<AllRecipeToSend>>> GetRecipes()
         {
-            var recipesToSend = new List<RecipeToSend>();
-            var recipes = await _context.Recipes.ToListAsync();
-            recipes.ForEach(r => recipesToSend.Add(new RecipeToSend(r)));
+            var recipesToSend = new List<AllRecipeToSend>();
+            var recipes = await _context.Recipes.Take(50).ToListAsync();
+            recipes.ForEach(r => recipesToSend.Add(new AllRecipeToSend(r)));
             return recipesToSend;
         }
 
@@ -42,7 +42,25 @@ namespace ReceptApp.Controllers
                 return NotFound();
             }
 
-            var recipeToSend = new RecipeToSend(recipe);
+            var recipeToSend = new RecipeToSend();
+            recipeToSend.Id = recipe.Id;
+            recipeToSend.OwnerId = recipe.OwnerId;
+            recipeToSend.Name = recipe.Name;
+            var ingredients = new List<IngredientToSend>();
+            _context.Ingredients.Where(i => i.RecipeId == recipe.Id).ToList().ForEach(ingr => ingredients.Add(new IngredientToSend {  Name = ingr.Name, Amount = ingr.Amount, Unit = ingr.Unit}));
+            recipeToSend.Ingredients = ingredients;
+            var description = recipe.Description.Split('@').ToList();
+            description.ForEach(d => d.Trim('@'));
+            recipeToSend.Description = description;
+            recipeToSend.PreparationTimeAmount = recipe.PreparationTimeAmount;
+            recipeToSend.PreparationTimeUnit = recipe.PreparationTimeUnit;
+            recipeToSend.CookTimeAmount = recipe.CookTimeAmount;
+            recipeToSend.CookTimeUnit = recipe.CookTimeUnit;
+            recipeToSend.AdditionalTimeAmount = recipe.AdditionalTimeAmount;
+            recipeToSend.AdditionalTimeUnit = recipe.AdditionalTimeUnit;
+            recipeToSend.Servings = recipe.Servings;
+            recipeToSend.Pictures = recipe.Pictures;
+            recipeToSend.MainPicture = recipe.MainPicture;
 
             return recipeToSend;
         }
@@ -70,6 +88,20 @@ namespace ReceptApp.Controllers
             recipe.Description = string.Join('@', newRecipe.Description);
             recipe.PreparationTimeAmount = newRecipe.PreparationTimeAmount;
             recipe.PreparationTimeUnit = newRecipe.PreparationTimeUnit;
+            var toRemove = new HashSet<Ingredient>();
+            recipe.Ingredients.ForEach(i =>
+            {
+                var ingredient = newRecipe.Ingredients.FirstOrDefault(ing => ing.Name == i.Name);
+                if(ingredient == null)
+                {
+                    toRemove.Add(i);
+                }
+                else
+                {
+                    i.Amount = ingredient.Amount;
+                    i.Unit = ingredient.Unit;
+                }
+            });
 
             try
             {

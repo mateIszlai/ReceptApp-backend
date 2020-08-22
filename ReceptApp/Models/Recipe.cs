@@ -12,7 +12,7 @@ namespace ReceptApp.Models
         [ForeignKey(nameof(User))]
         public string OwnerId { get; set; }
         public string Name { get; set; }
-        public HashSet<Ingredient> Ingredients { get; set; }
+        public List<Ingredient> Ingredients { get; set; }
         public string Description { get; set; }
         public double PreparationTimeAmount { get; set; }
         public string PreparationTimeUnit { get; set; }
@@ -21,7 +21,7 @@ namespace ReceptApp.Models
         public double AdditionalTimeAmount { get; set; }
         public string AdditionalTimeUnit { get; set; }
         public int Servings { get; set; }
-        public HashSet<Picture> Pictures { get; set; }
+        public List<Picture> Pictures { get; set; }
         public Picture MainPicture { get; set; }
 
         public Recipe()
@@ -36,12 +36,12 @@ namespace ReceptApp.Models
             CookTimeUnit = recipe.CookTimeUnit;
             Name = recipe.Name;
             Description = string.Join('@', recipe.Description);
-            Ingredients = recipe.Ingredients.ToHashSet();
+            Ingredients = recipe.Ingredients;
             Servings = recipe.Servings;
             PreparationTimeAmount = recipe.PreparationTimeAmount;
             PreparationTimeUnit = recipe.PreparationTimeUnit;
             OwnerId = ownerId;
-            Pictures = new HashSet<Picture>();
+            Pictures = new List<Picture>();
         }
     }
 }
