@@ -89,12 +89,13 @@ namespace ReceptApp.Controllers
             recipe.PreparationTimeAmount = newRecipe.PreparationTimeAmount;
             recipe.PreparationTimeUnit = newRecipe.PreparationTimeUnit;
             var toRemove = new HashSet<Ingredient>();
-            recipe.Ingredients.ForEach(i =>
+            var ingredients = await _context.Ingredients.Where(i => i.RecipeId == recipe.Id).ToListAsync();
+            ingredients.ForEach(i =>
             {
                 var ingredient = newRecipe.Ingredients.FirstOrDefault(ing => ing.Name == i.Name);
                 if(ingredient == null)
                 {
-                    toRemove.Add(i);
+                    _context.Ingredients.Remove(i);
                 }
                 else
                 {
@@ -102,6 +103,14 @@ namespace ReceptApp.Controllers
                     i.Unit = ingredient.Unit;
                 }
             });
+
+            newRecipe.Ingredients.ForEach(ing =>
+           {
+               if (ingredients.FirstOrDefault(ingredients => ingredients.Name == ing.Name) == null)
+               {
+                   _context.Ingredients.Add(new Ingredient { Name = ing.Name, Amount = ing.Amount, Unit = ing.Unit, RecipeId = id });
+               }
+           });
 
             try
             {
