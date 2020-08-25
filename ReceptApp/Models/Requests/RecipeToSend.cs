@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 
 namespace ReceptApp.Models.Requests
 {
@@ -10,6 +9,7 @@ namespace ReceptApp.Models.Requests
         public string Name { get;  set; }
         public List<IngredientToSend> Ingredients { get;  set; }
         public List<string> Description { get;  set; }
+        public string SmallDescription { get; set; }
         public double PreparationTimeAmount { get;  set; }
         public string PreparationTimeUnit { get;  set; }
         public double CookTimeAmount { get;  set; }

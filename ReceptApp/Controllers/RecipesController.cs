@@ -14,7 +14,6 @@ namespace ReceptApp.Controllers
     public class RecipesController : ControllerBase
     {
         private readonly RecipeDbContext _context;
-        private readonly string[] permittedExtensions = { ".jpg", ".png", ".bmp" };
 
         public RecipesController(RecipeDbContext context)
         {
@@ -27,7 +26,7 @@ namespace ReceptApp.Controllers
         {
             var recipesToSend = new List<AllRecipeToSend>();
             var recipes = await _context.Recipes.Take(50).ToListAsync();
-            recipes.ForEach(r => recipesToSend.Add(new AllRecipeToSend(r)));
+            recipes.ForEach(r => recipesToSend.Add(new AllRecipeToSend { Id = r.Id, SmallDescription = r.SmallDescription, Name = r.Name, MainPicture = _context.Pictures.Find(r.MainPictureId)}));
             return recipesToSend;
         }
 
@@ -52,6 +51,7 @@ namespace ReceptApp.Controllers
             var description = recipe.Description.Split('@').ToList();
             description.ForEach(d => d.Trim('@'));
             recipeToSend.Description = description;
+            recipeToSend.SmallDescription = recipe.SmallDescription;
             recipeToSend.PreparationTimeAmount = recipe.PreparationTimeAmount;
             recipeToSend.PreparationTimeUnit = recipe.PreparationTimeUnit;
             recipeToSend.CookTimeAmount = recipe.CookTimeAmount;
@@ -59,8 +59,8 @@ namespace ReceptApp.Controllers
             recipeToSend.AdditionalTimeAmount = recipe.AdditionalTimeAmount;
             recipeToSend.AdditionalTimeUnit = recipe.AdditionalTimeUnit;
             recipeToSend.Servings = recipe.Servings;
-            recipeToSend.Pictures = recipe.Pictures;
-            recipeToSend.MainPicture = recipe.MainPicture;
+            recipeToSend.Pictures = await _context.Pictures.Where(p => p.RecipeId == recipe.Id).ToListAsync();
+            recipeToSend.MainPicture = await _context.Pictures.FindAsync(recipe.MainPictureId);
 
             return recipeToSend;
         }
@@ -80,6 +80,7 @@ namespace ReceptApp.Controllers
                 return BadRequest();
 
             recipe.Name = newRecipe.Name;
+            recipe.SmallDescription = newRecipe.SmallDescription;
             recipe.Servings = newRecipe.Servings;
             recipe.AdditionalTimeUnit = newRecipe.AdditionalTimeUnit;
             recipe.AdditionalTimeAmount = newRecipe.AdditionalTimeAmount;

@@ -5,6 +5,7 @@ namespace ReceptApp.Models.Requests
     public class RecipeToChange
     {
         public string Name { get; set; }
+        public string SmallDescription { get; set; }
         public List<string> Description { get; set; }
         public double PreparationTimeAmount { get; set; }
         public string PreparationTimeUnit { get; set; }
