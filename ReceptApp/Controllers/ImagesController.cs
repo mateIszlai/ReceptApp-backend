@@ -19,6 +19,18 @@ namespace ReceptApp.Controllers
             _context = context;
         }
 
+        // GET: api/Images/5
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetImage(int id)
+        {
+            var image = await _context.Pictures.FindAsync(id);
 
+            if(image == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(image);
+        }
     }
 }
