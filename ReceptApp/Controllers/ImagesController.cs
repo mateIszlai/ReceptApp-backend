@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ReceptApp.Models;
+using ReceptApp.Models.Requests;
+using System.Threading.Tasks;
 
 namespace ReceptApp.Controllers
 {
@@ -31,6 +29,23 @@ namespace ReceptApp.Controllers
             }
 
             return Ok(image);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> PostImage(PicturePostRequest pictureToAdd)
+        {
+            _context.Pictures.Add(new Picture { Name = pictureToAdd.Name, Content = pictureToAdd.Content, RecipeId = pictureToAdd.RecipeId });
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch( DbUpdateException e)
+            {
+                return StatusCode(500, e.Data);
+            }
+
+            return Ok();
         }
     }
 }
