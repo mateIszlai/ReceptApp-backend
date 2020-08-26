@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReceptApp.Models;
-using ReceptApp.Models.Requests;
+using System.IO;
+using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace ReceptApp.Controllers
@@ -11,6 +13,7 @@ namespace ReceptApp.Controllers
     public class ImagesController : ControllerBase
     {
         private readonly RecipeDbContext _context;
+        private readonly string[] permittedExtensions = { ".jpg", ".png", ".bmp" };
 
         public ImagesController(RecipeDbContext context)
         {
@@ -32,9 +35,29 @@ namespace ReceptApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> PostImage(PicturePostRequest pictureToAdd)
+        public async Task<IActionResult> PostImage()
         {
-            _context.Pictures.Add(new Picture { Name = pictureToAdd.Name, Content = pictureToAdd.Content, RecipeId = pictureToAdd.RecipeId });
+            var formfile = Request.Form.Files[0];
+            var filename = Request.Form.FirstOrDefault(k => k.Key == "fileName").Value;
+            var ext = Path.GetExtension(filename).ToLowerInvariant();
+
+            if (string.IsNullOrEmpty(ext) || !permittedExtensions.Contains(ext))
+            {
+                return BadRequest("Invalid file extension");
+            }
+
+            using( var memoryStream = new MemoryStream())
+            {
+                await formfile.CopyToAsync(memoryStream);
+                var picture = new Picture
+                {
+                    Name = WebUtility.HtmlEncode(filename),
+                    RecipeId = int.Parse(Request.Form.First(k => k.Key == "recipeId").Value),
+                    Content = memoryStream.ToArray()
+                };
+
+                _context.Pictures.Add(picture);
+            }
 
             try
             {
